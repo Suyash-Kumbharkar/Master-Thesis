@@ -1,0 +1,140 @@
+\chapter{Experimental Setup}
+% \section{Evaluation Setup and Criteria}
+% Explanation of the evaluation setup and criteria used to assess the performance of modern CV methods.
+
+% \section{Comparative Results}
+% Presentation and analysis of comparative results between traditional and modern CV methods (RQ3, RQ4). Specific scenarios where each method outperforms the other.
+
+% \section{Discussion of Findings}
+% Discussion of findings from the evaluation and comparison of CV methods. Analysis of specific scenarios and environments.
+\section{Problem Formulation}
+
+Let us consider a dataset 
+\[
+\mathcal{D} = \{(\mathbf{x}_i, \mathbf{Y}_i)\}_{i=1}^{N},
+\]
+where \( N = 2050 \) denotes the total number of simulation samples generated using Latin Hypercube Sampling (LHS). Each input vector \( \mathbf{x}_i \in \mathbb{R}^7 \) represents a unique combination of system operating parameters of the electric vehicle thermal management system.
+
+For each input configuration \( \mathbf{x}_i \), a high-fidelity simulation is performed in Dymola over a time horizon of 30 minutes (approximately 1800 time steps). The corresponding output 
+\[
+\mathbf{Y}_i \in \mathbb{R}^{23 \times T}, \quad \text{with } T = 1800,
+\]
+represents multivariate time-series data consisting of 23 output variables recorded over time.
+
+The dataset is generated under two distinct operating conditions: \textit{Fast Charging} and \textit{Race Track}, each contributing 1025 simulation samples. These conditions capture different system behaviors, ranging from stationary charging scenarios to high-performance driving conditions.
+
+The objective is to learn a surrogate model
+\[
+f_{\theta}: \mathbb{R}^7 \rightarrow \mathbb{R}^{23 \times T},
+\]
+which approximates the dynamic system response such that
+\[
+\mathbf{Y}_i \approx f_{\theta}(\mathbf{x}_i).
+\]
+
+This formulation represents a high-dimensional regression problem, where a low-dimensional input vector is mapped to a high-dimensional temporal output. The surrogate model is trained to predict the full time evolution of all output variables simultaneously.
+
+To learn the model parameters \( \theta \), a Mean Squared Error (MSE) loss is minimized over all samples, output variables, and time steps:
+\[
+\mathcal{L}(\theta) = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{T} \sum_{t=1}^{T} 
+\| \mathbf{y}_i^{(t)} - \hat{\mathbf{y}}_i^{(t)} \|^2,
+\]
+where \( \mathbf{y}_i^{(t)} \in \mathbb{R}^{23} \) denotes the ground truth output at time step \( t \), and \( \hat{\mathbf{y}}_i^{(t)} \) represents the corresponding model prediction.
+
+The trained function \( f_{\theta} \) serves as a computationally efficient surrogate for the original simulation model, enabling rapid prediction of the system’s thermal behavior under varying operating conditions.
+
+
+\section{Data Preprocessing and PCA Transformation}
+
+Before training the surrogate model, the data is preprocessed using standardization followed by Principal Component Analysis (PCA). This ensures numerical stability and removes correlations between features.
+
+Given a dataset \( \mathbf{X} \in \mathbb{R}^{N \times d} \), each feature is standardized using z-score normalization:
+\[
+\tilde{x}_{i,j} = \frac{x_{i,j} - \mu_j}{\sigma_j}
+\]
+where \( \mu_j \) and \( \sigma_j \) denote the mean and standard deviation of the \( j \)-th feature, computed from the training dataset. These parameters are reused for validation and test data to ensure consistency.
+
+\paragraph{Illustrative Example (Scaling)}
+Consider a temperature variable with mean \( \mu = 300\,K \) and standard deviation \( \sigma = 20\,K \). A value of \( 320\,K \) is transformed as:
+\[
+\tilde{x} = \frac{320 - 300}{20} = 1.0
+\]
+Similarly, \( 330\,K \) is transformed to:
+\[
+\tilde{x} = \frac{330 - 300}{20} = 1.5
+\]
+This transformation ensures that all features are centered and scaled to comparable ranges.
+
+\paragraph{PCA Transformation}
+After standardization, PCA is applied to obtain an orthogonal representation of the data. The covariance matrix of the standardized data is given by:
+\[
+\mathbf{C} = \frac{1}{N} \tilde{\mathbf{X}}^\top \tilde{\mathbf{X}}
+\]
+PCA computes the eigenvalue decomposition:
+\[
+\mathbf{C} = \mathbf{V} \mathbf{\Lambda} \mathbf{V}^\top
+\]
+where \( \mathbf{V} \) contains the eigenvectors (principal components) and \( \mathbf{\Lambda} \) contains the corresponding eigenvalues.
+
+The transformed data is obtained by projecting onto these orthogonal axes:
+\[
+\mathbf{Z} = \tilde{\mathbf{X}} \mathbf{V}
+\]
+
+\paragraph{Illustrative Example (PCA Projection)}
+Consider a standardized input vector:
+\[
+\tilde{\mathbf{x}} = [1.0,\; 0.5]
+\]
+and a principal component direction:
+\[
+\mathbf{v}_1 = [0.8,\; 0.6]
+\]
+The projection onto this component is:
+\[
+z_1 = \tilde{\mathbf{x}} \cdot \mathbf{v}_1 = (1.0)(0.8) + (0.5)(0.6) = 1.1
+\]
+This demonstrates how the original data is represented along a rotated axis corresponding to maximum variance.
+
+\section{Error Computation in Transformed Space}
+
+The surrogate model is trained and evaluated in the transformed (scaled and PCA) space. Let \( \mathbf{z}_i^{(t)} \) denote the ground truth and \( \hat{\mathbf{z}}_i^{(t)} \) the predicted values at time step \( t \).
+
+The Mean Squared Error (MSE) is defined as:
+\[
+\mathcal{L} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{T} \sum_{t=1}^{T}
+\| \mathbf{z}_i^{(t)} - \hat{\mathbf{z}}_i^{(t)} \|^2
+\]
+
+\paragraph{Illustrative Example (Error Calculation)}
+Consider:
+\begin{itemize}
+    \item Ground truth: \( 30^\circ C \Rightarrow 1.3 \) (scaled)
+    \item Prediction: \( 29^\circ C \Rightarrow 1.2 \) (scaled)
+\end{itemize}
+
+The error is computed in the transformed space:
+\[
+(1.3 - 1.2)^2 = 0.01
+\]
+
+After computing the error, the values are inverse transformed to obtain physical units.
+
+\section{Inverse Transformation to Physical Space}
+
+After prediction, the outputs are transformed back to the original physical space using inverse transformations.
+
+First, the inverse PCA transformation:
+\[
+\tilde{\mathbf{Y}} = \mathbf{Z} \mathbf{V}^\top
+\]
+
+Then, inverse standardization:
+\[
+\mathbf{Y} = \tilde{\mathbf{Y}} \cdot \sigma + \mu
+\]
+
+This step ensures that predictions are expressed in meaningful physical units such as temperature in \( ^\circ C \) or Kelvin.
+
+\paragraph{}
+It is important to note that both predictions and ground truth values are compared in the transformed space, ensuring consistent scaling across features. The inverse transformation is applied only after error computation for interpretability.

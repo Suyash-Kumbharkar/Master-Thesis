@@ -1,0 +1,50 @@
+\documentclass{scrreprt}
+\input{preamble}
+
+\begin{document}
+\pagenumbering{roman}
+
+\include{templates/titlepage}
+\include{sections/acknowledgments}
+\include{sections/abstract}
+\include{sections/ConfidentialityClause}
+\include{sections/affidavit}
+
+% Acronyms
+
+\include{sections/acronyms}
+
+\printnomenclature
+% Table of Contents, List of Figures, List of Tables
+
+\include{sections/lof}
+\include{sections/lot}
+\include{sections/toc}
+
+\pagenumbering{arabic}
+% Include the chapters
+\include{chapters/introduction}
+\include{chapters/fundamentals}
+\include{chapters/Related_Work}
+\include{chapters/methodologies}
+\include{chapters/Experimental_Setup}
+\include{chapters/results}
+% \include{chapters/implementation_modern_cv}
+\include{chapters/results_comparison}
+%\include{chapters/localization}
+\include{chapters/discussion}
+\include{chapters/conclusion}
+\include{chapters/bibliography}
+
+
+% Appendices
+\include{chapters/appendices}
+\begin{comment}
+    % Bibliography
+\bibliographystyle{ieeetr}
+\bibliography{bibliography}comment
+\end{comment}
+
+
+
+\end{document}

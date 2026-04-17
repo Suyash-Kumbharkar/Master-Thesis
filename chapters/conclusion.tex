@@ -1,0 +1,4 @@
+\chapter{Conclusion}
+A validated Dymola thermal model of the EV battery and HVAC system was used to generate 2050 simulation runs via Latin Hypercube Sampling, each producing 23 time-dependent outputs over 1800 time steps.\\
+PCA compressed temporal outputs from 1800 to 5 dimensions (retaining >95 variance), enabling a Random Forest surrogate model to map 7 input parameters to the latent space with fast inference.\\
+Current limitations include indirect temporal dynamics handling, independent output learning, and PCA dependence—motivating the next step: an MLP-based neural sequence model to directly capture temporal behavior and coupled dynamics.
